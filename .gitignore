@@ -48,4 +48,4 @@ Thumbs.db
 *.mov
 *.wmv
 # dotenv environment variables file
-.env
+# .env
