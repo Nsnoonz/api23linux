@@ -1,0 +1,26 @@
+
+- npm init -y 
+- npm install express
+-  package.json set "type": "module",
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
