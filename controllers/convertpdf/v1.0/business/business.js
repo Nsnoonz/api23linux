@@ -10,6 +10,7 @@ import ftp from 'basic-ftp'
 import pdf from 'html-pdf'
 import axios from 'axios'
 import iconv from 'iconv-lite' 
+import path from 'path'
 
 const bfnMakeDirectories = async (listFolder) => {
   if (!fs.existsSync(listFolder.slice(0, listFolder.length - 1).join('/'))) {
@@ -65,34 +66,53 @@ const bfnGetFilename = async (params) => {
 }
 
 const bfnGeneratePDFByHTML = async (params) => {
-  const pathfile = `../file/generatepdf/${params.system}/${params.foldername}`
-  const options = params.options || { format: 'Letter' }
-  options.timeout = '300000'
-  try {
-    fs.statSync(pathfile)
-  } catch (e) {
-    const listFolder = pathfile.split('/')
-    await bfnMakeDirectories(listFolder)
-  }
-  return new Promise((resolve, reject) => {
-    pdf.create(params.html, options).toFile(`${pathfile}/${params.filename}.pdf`, async function (errPdf, res) {
-      if (errPdf) {
-        console.log(errPdf)
-        console.error('Error details:', {
-          errno: errPdf.errno,
-          code: errPdf.code,
-          syscall: errPdf.syscall,
-          message: errPdf.message,
-        });
-        return reject(errPdf);
-      } else {
-        // await bfnUploadToFtp(`${params.filename}.pdf`, `${pathfile}/${params.filename}.pdf`, params.ftppath, params)
-        // const realPath = process.env.NODE_ENV === 'production' ? params.ftppath : `file/test/${params.system}/${params.foldername}`
-        // resolve({ urlonline: `https://internal.silkspan.com/${realPath}/${params.filename}.pdf`, urllocal: `${pathfile}/${params.filename}.pdf` })
-        resolve({ urllocal: `${pathfile}/${params.filename}.pdf` })
-      }
-    })
-  })
+  const pathfile = path.resolve(`../file/generatepdf/${params.system}/${params.foldername}`);
+  fs.mkdirSync(pathfile, { recursive: true });
+  const options = params.options || { format: 'Letter' };
+  options.timeout = '300000';
+
+  console.log('Launching browser...');
+  const browser = await puppeteer.launch({
+    args: ['--no-sandbox', '--disable-setuid-sandbox'] // Ensure it works on EC2
+  });
+  const page = await browser.newPage();
+
+  const htmlContent = params.html;
+  console.log('Setting page content...');
+  await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+
+  const pdfPath = path.join(pathfile, `${params.filename}.pdf`);
+  console.log(`Generating PDF at: ${pdfPath}`);
+  await page.pdf({ path: pdfPath, format: 'A4' });
+
+  await browser.close();
+  console.log('PDF generated successfully.');
+  return pathfile
+  // try {
+  //   fs.statSync(pathfile)
+  // } catch (e) {
+  //   const listFolder = pathfile.split('/')
+  //   await bfnMakeDirectories(listFolder)
+  // }
+  // return new Promise((resolve, reject) => {
+  //   pdf.create(params.html, options).toFile(`${pathfile}/${params.filename}.pdf`, async function (errPdf, res) {
+  //     if (errPdf) {
+  //       console.log(errPdf)
+  //       console.error('Error details:', {
+  //         errno: errPdf.errno,
+  //         code: errPdf.code,
+  //         syscall: errPdf.syscall,
+  //         message: errPdf.message,
+  //       });
+  //       return reject(errPdf);
+  //     } else {
+  //       // await bfnUploadToFtp(`${params.filename}.pdf`, `${pathfile}/${params.filename}.pdf`, params.ftppath, params)
+  //       // const realPath = process.env.NODE_ENV === 'production' ? params.ftppath : `file/test/${params.system}/${params.foldername}`
+  //       // resolve({ urlonline: `https://internal.silkspan.com/${realPath}/${params.filename}.pdf`, urllocal: `${pathfile}/${params.filename}.pdf` })
+  //       resolve({ urllocal: `${pathfile}/${params.filename}.pdf` })
+  //     }
+  //   })
+  // })
 }
 
 const Business = {
