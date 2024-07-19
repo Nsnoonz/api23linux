@@ -79,12 +79,12 @@ const bfnGeneratePDFByHTML = async (params) => {
       if (errPdf) {
         console.log(errPdf)
         console.error('Error details:', {
-          errno: err.errno,
-          code: err.code,
-          syscall: err.syscall,
-          message: err.message,
+          errno: errPdf.errno,
+          code: errPdf.code,
+          syscall: errPdf.syscall,
+          message: errPdf.message,
         });
-        return reject(err);
+        return reject(errPdf);
       } else {
         // await bfnUploadToFtp(`${params.filename}.pdf`, `${pathfile}/${params.filename}.pdf`, params.ftppath, params)
         // const realPath = process.env.NODE_ENV === 'production' ? params.ftppath : `file/test/${params.system}/${params.foldername}`
